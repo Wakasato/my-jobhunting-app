@@ -1,0 +1,119 @@
+import React, { useState } from 'react';
+import type { JobApplication, JobStatus } from '../types';
+import { JobTable } from './JobTable';
+import { JobCharts } from './JobCharts';
+import { PlusCircle } from 'lucide-react';
+
+export function Dashboard() {
+  const [jobs, setJobs] = useState<JobApplication[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const [newJob, setNewJob] = useState<Partial<JobApplication>>({
+    companyName: '',
+    status: 'will apply',
+    appliedDate: new Date().toISOString().split('T')[0],
+    salaryRange: '',
+    jobTitle: '',
+    submittedDocuments: ''
+  });
+
+  const handleAddJob = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJob.companyName || !newJob.jobTitle) return;
+
+    const job: JobApplication = {
+      id: crypto.randomUUID(),
+      companyName: newJob.companyName!,
+      status: newJob.status as JobStatus,
+      appliedDate: newJob.appliedDate || '',
+      salaryRange: newJob.salaryRange || '',
+      jobTitle: newJob.jobTitle!,
+      submittedDocuments: newJob.submittedDocuments || ''
+    };
+
+    setJobs([job, ...jobs]);
+    setNewJob({
+      companyName: '',
+      status: 'will apply',
+      appliedDate: new Date().toISOString().split('T')[0],
+      salaryRange: '',
+      jobTitle: '',
+      submittedDocuments: ''
+    });
+    setShowAddForm(false);
+  };
+
+  const handleUpdateJob = (updatedJob: JobApplication) => {
+    setJobs(jobs.map(job => job.id === updatedJob.id ? updatedJob : job));
+  };
+
+  const handleDeleteJob = (id: string) => {
+    setJobs(jobs.filter(job => job.id !== id));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setNewJob({ ...newJob, [e.target.name]: e.target.value });
+  };
+
+  return (
+    <div className="dashboard">
+      <header className="dashboard-header">
+        <h1>Job Tracker</h1>
+        <button className="primary-btn" onClick={() => setShowAddForm(!showAddForm)}>
+          <PlusCircle size={20} />
+          <span>{showAddForm ? 'Cancel' : 'Add Job'}</span>
+        </button>
+      </header>
+
+      {showAddForm && (
+        <div className="add-job-card">
+          <h2>Add New Application</h2>
+          <form onSubmit={handleAddJob} className="add-job-form">
+            <div className="form-group">
+              <label>Company Name *</label>
+              <input required type="text" name="companyName" value={newJob.companyName} onChange={handleChange} placeholder="e.g. Acme Corp" />
+            </div>
+            <div className="form-group">
+              <label>Job Title *</label>
+              <input required type="text" name="jobTitle" value={newJob.jobTitle} onChange={handleChange} placeholder="e.g. Frontend Engineer" />
+            </div>
+            <div className="form-group">
+              <label>Status</label>
+              <select name="status" value={newJob.status} onChange={handleChange}>
+                <option value="will apply">will apply</option>
+                <option value="applied">applied</option>
+                <option value="interview">interview</option>
+                <option value="rejection">rejection</option>
+                <option value="ATS rejection">ATS rejection</option>
+                <option value="No-reply rejection">No-reply rejection</option>
+                <option value="Visa rejection">Visa rejection</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Applied Date</label>
+              <input type="date" name="appliedDate" value={newJob.appliedDate} onChange={handleChange} />
+            </div>
+            <div className="form-group">
+              <label>Salary Range</label>
+              <input type="text" name="salaryRange" value={newJob.salaryRange} onChange={handleChange} placeholder="e.g. $100k - $120k" />
+            </div>
+            <div className="form-group">
+              <label>Submitted Docs</label>
+              <input type="text" name="submittedDocuments" value={newJob.submittedDocuments} onChange={handleChange} placeholder="e.g. Resume, Cover Letter" />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="primary-btn">Save Application</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <JobCharts jobs={jobs} />
+
+      <div className="table-section">
+        <h2>Applications ({jobs.length})</h2>
+        <JobTable jobs={jobs} onUpdateJob={handleUpdateJob} onDeleteJob={handleDeleteJob} />
+      </div>
+    </div>
+  );
+}

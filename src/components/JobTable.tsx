@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { JobApplication, JobStatus } from '../types';
+import type { JobApplication, JobStatus } from '../types';
 import { Trash2, Edit2, Check, X } from 'lucide-react';
 
 interface JobTableProps {
