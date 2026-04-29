@@ -4,7 +4,7 @@ import { JobTable } from './JobTable';
 import { JobCharts } from './JobCharts';
 import { PlusCircle } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 
 interface DashboardProps {
