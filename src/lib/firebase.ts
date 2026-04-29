@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth"; // authをインポート
 
 // ここでは「.env.local から値を読み込め」という命令だけを書きます
 const firebaseConfig = {
@@ -15,9 +15,6 @@ const firebaseConfig = {
 
 // Firebaseの初期化
 const app = initializeApp(firebaseConfig);
-
-// データベース(Firestore)をエクスポート
-export const db = getFirestore(app);
-
-// 認証(Auth)をエクスポート
-export const auth = getAuth(app);
+const db = getFirestore(app);
+const auth = getAuth(app); // authを初期化
+export { db, auth }; // 両方をエクスポート

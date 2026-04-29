@@ -4,9 +4,15 @@ import { JobTable } from './JobTable';
 import { JobCharts } from './JobCharts';
 import { PlusCircle } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 
-export function Dashboard() {
+interface DashboardProps {
+  user: User;
+  onLogout: () => void;
+}
+
+export function Dashboard({ user, onLogout }: DashboardProps) {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,8 +27,11 @@ export function Dashboard() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'jobs'), orderBy('appliedDate', 'desc'));
-    
+    const q = query(
+      collection(db, 'jobs'),
+      where('userId', '==', user.uid)
+    );
+
     // Set up real-time listener
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const jobsData: JobApplication[] = [];
@@ -30,6 +39,14 @@ export function Dashboard() {
         // Document ID from Firestore is used as the job application ID
         jobsData.push({ id: doc.id, ...doc.data() } as JobApplication);
       });
+      
+      // Firestoreの複合インデックスの作成を待たずに済むように、JavaScript側で日付順にソートします
+      jobsData.sort((a, b) => {
+        const dateA = a.appliedDate ? new Date(a.appliedDate).getTime() : 0;
+        const dateB = b.appliedDate ? new Date(b.appliedDate).getTime() : 0;
+        return dateB - dateA; // 降順 (desc)
+      });
+
       setJobs(jobsData);
       setLoading(false);
     }, (error) => {
@@ -39,7 +56,7 @@ export function Dashboard() {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []);
+  }, [user.uid]);
 
   const handleAddJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +70,8 @@ export function Dashboard() {
         appliedDate: newJob.appliedDate || '',
         salaryRange: newJob.salaryRange || '',
         jobTitle: newJob.jobTitle,
-        submittedDocuments: newJob.submittedDocuments || ''
+        submittedDocuments: newJob.submittedDocuments || '',
+        userId: user.uid
       });
 
       // Reset form
@@ -108,12 +126,20 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Job Tracker</h1>
-        <button className="primary-btn" onClick={() => setShowAddForm(!showAddForm)}>
-          <PlusCircle size={20} />
-          <span>{showAddForm ? 'Cancel' : 'Add Job'}</span>
-        </button>
+      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Job Tracker</h1>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>Signed in as {user.email}</p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="primary-btn" onClick={() => setShowAddForm(!showAddForm)}>
+            <PlusCircle size={20} />
+            <span>{showAddForm ? 'Cancel' : 'Add Job'}</span>
+          </button>
+          <button onClick={onLogout} style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: 'transparent', cursor: 'pointer', fontSize: '0.9rem' }}>
+            Logout
+          </button>
+        </div>
       </header>
 
       {showAddForm && (
@@ -146,7 +172,7 @@ export function Dashboard() {
             </div>
             <div className="form-group">
               <label>Salary Range</label>
-              <input type="text" name="salaryRange" value={newJob.salaryRange} onChange={handleChange} placeholder="e.g. $100k - $120k" />
+              <input type="text" name="salaryRange" value={newJob.salaryRange} onChange={handleChange} placeholder="e.g. £100k - £120k" />
             </div>
             <div className="form-group">
               <label>Submitted Docs</label>
