@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // ここでは「.env.local から値を読み込め」という命令だけを書きます
 const firebaseConfig = {
@@ -17,3 +18,6 @@ const app = initializeApp(firebaseConfig);
 
 // データベース(Firestore)をエクスポート
 export const db = getFirestore(app);
+
+// 認証(Auth)をエクスポート
+export const auth = getAuth(app);
