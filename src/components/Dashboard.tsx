@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { JobApplication, JobStatus } from '../types';
 import { JobTable } from './JobTable';
 import { JobCharts } from './JobCharts';
 import { PlusCircle } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export function Dashboard() {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [newJob, setNewJob] = useState<Partial<JobApplication>>({
     companyName: '',
@@ -17,43 +20,91 @@ export function Dashboard() {
     submittedDocuments: ''
   });
 
-  const handleAddJob = (e: React.FormEvent) => {
+  useEffect(() => {
+    const q = query(collection(db, 'jobs'), orderBy('appliedDate', 'desc'));
+    
+    // Set up real-time listener
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const jobsData: JobApplication[] = [];
+      querySnapshot.forEach((doc) => {
+        // Document ID from Firestore is used as the job application ID
+        jobsData.push({ id: doc.id, ...doc.data() } as JobApplication);
+      });
+      setJobs(jobsData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching jobs from Firestore: ", error);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJob.companyName || !newJob.jobTitle) return;
 
-    const job: JobApplication = {
-      id: crypto.randomUUID(),
-      companyName: newJob.companyName!,
-      status: newJob.status as JobStatus,
-      appliedDate: newJob.appliedDate || '',
-      salaryRange: newJob.salaryRange || '',
-      jobTitle: newJob.jobTitle!,
-      submittedDocuments: newJob.submittedDocuments || ''
-    };
+    try {
+      // Create new document in 'jobs' collection
+      await addDoc(collection(db, 'jobs'), {
+        companyName: newJob.companyName,
+        status: newJob.status as JobStatus,
+        appliedDate: newJob.appliedDate || '',
+        salaryRange: newJob.salaryRange || '',
+        jobTitle: newJob.jobTitle,
+        submittedDocuments: newJob.submittedDocuments || ''
+      });
 
-    setJobs([job, ...jobs]);
-    setNewJob({
-      companyName: '',
-      status: 'will apply',
-      appliedDate: new Date().toISOString().split('T')[0],
-      salaryRange: '',
-      jobTitle: '',
-      submittedDocuments: ''
-    });
-    setShowAddForm(false);
+      // Reset form
+      setNewJob({
+        companyName: '',
+        status: 'will apply',
+        appliedDate: new Date().toISOString().split('T')[0],
+        salaryRange: '',
+        jobTitle: '',
+        submittedDocuments: ''
+      });
+      setShowAddForm(false);
+    } catch (error) {
+      console.error("Error adding document to Firestore: ", error);
+      alert("Failed to save job application. See console for details.");
+    }
   };
 
-  const handleUpdateJob = (updatedJob: JobApplication) => {
-    setJobs(jobs.map(job => job.id === updatedJob.id ? updatedJob : job));
+  const handleUpdateJob = async (updatedJob: JobApplication) => {
+    try {
+      const jobRef = doc(db, 'jobs', updatedJob.id);
+      // Remove the id property before saving back to Firestore
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...dataToUpdate } = updatedJob;
+      await updateDoc(jobRef, dataToUpdate);
+    } catch (error) {
+      console.error("Error updating document in Firestore: ", error);
+      alert("Failed to update job application. See console for details.");
+    }
   };
 
-  const handleDeleteJob = (id: string) => {
-    setJobs(jobs.filter(job => job.id !== id));
+  const handleDeleteJob = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'jobs', id));
+    } catch (error) {
+      console.error("Error deleting document from Firestore: ", error);
+      alert("Failed to delete job application. See console for details.");
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setNewJob({ ...newJob, [e.target.name]: e.target.value });
   };
+
+  if (loading) {
+    return (
+      <div className="dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <h2>Loading your applications from Firebase...</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
