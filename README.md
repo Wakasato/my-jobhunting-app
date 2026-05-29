@@ -40,7 +40,7 @@ To ensure technical recruiters can evaluate the application instantly, the demo@
 This bypasses automated security checkpoints (such as verification emails, OTPs, or suspicious activity locks) while maintaining standard authentication flows.
 ## 🚀 Local Installation & Setup
 ### 1. Clone the Repository
-git clone [https://github.com/your-username/repository-name.git](https://github.com/your-username/repository-name.git)
+git clone [https://github.com/Wakasato/my-jobhunting-app.git](https://github.com/Wakasato/my-jobhunting-app.git)
 cd repository-name
 
 
