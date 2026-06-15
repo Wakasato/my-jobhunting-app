@@ -7,6 +7,14 @@ export type JobStatus =
   | 'interview' 
   | 'Visa rejection';
 
+export type JobType =
+  | 'Permanent'
+  | 'FTC'
+  | 'Contract'
+  | 'Part-time'
+  | 'Internship'
+  | 'Remote';
+
 export interface JobApplication {
   id: string;
   companyName: string;
@@ -14,5 +22,7 @@ export interface JobApplication {
   appliedDate: string;
   salaryRange: string;
   jobTitle: string;
+  jobType?: JobType;
   submittedDocuments: string;
+  jdUrl?: string;
 }

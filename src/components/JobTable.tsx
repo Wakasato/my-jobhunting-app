@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { JobApplication, JobStatus } from '../types';
-import { Trash2, Edit2, Check, X } from 'lucide-react';
+import { Trash2, Edit2, Check, X, ExternalLink } from 'lucide-react';
 
 interface JobTableProps {
   jobs: JobApplication[];
@@ -53,17 +53,19 @@ export function JobTable({ jobs, onUpdateJob, onDeleteJob }: JobTableProps) {
           <tr>
             <th>Company Name</th>
             <th>Job Title</th>
+            <th>Job Type</th>
             <th>Status</th>
             <th>Applied Date</th>
             <th>Salary Range</th>
             <th>Submitted Documents</th>
+            <th>JD</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {jobs.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center">No job applications found. Add one above!</td>
+              <td colSpan={9} className="text-center">No job applications found. Add one above!</td>
             </tr>
           ) : (
             jobs.map((job) => (
@@ -72,6 +74,16 @@ export function JobTable({ jobs, onUpdateJob, onDeleteJob }: JobTableProps) {
                   <>
                     <td><input type="text" name="companyName" value={editFormData.companyName} onChange={handleChange} /></td>
                     <td><input type="text" name="jobTitle" value={editFormData.jobTitle} onChange={handleChange} /></td>
+                    <td>
+                      <select name="jobType" value={editFormData.jobType || 'Permanent'} onChange={handleChange}>
+                        <option value="Permanent">Permanent</option>
+                        <option value="FTC">FTC</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Internship">Internship</option>
+                        <option value="Remote">Remote</option>
+                      </select>
+                    </td>
                     <td>
                       <select name="status" value={editFormData.status} onChange={handleChange}>
                         <option value="will apply">will apply</option>
@@ -86,6 +98,7 @@ export function JobTable({ jobs, onUpdateJob, onDeleteJob }: JobTableProps) {
                     <td><input type="date" name="appliedDate" value={editFormData.appliedDate} onChange={handleChange} /></td>
                     <td><input type="text" name="salaryRange" value={editFormData.salaryRange} onChange={handleChange} /></td>
                     <td><input type="text" name="submittedDocuments" value={editFormData.submittedDocuments} onChange={handleChange} /></td>
+                    <td><input type="url" name="jdUrl" value={editFormData.jdUrl || ''} onChange={handleChange} placeholder="https://..." style={{width: '100px'}} /></td>
                     <td>
                       <div className="action-buttons">
                         <button onClick={handleSaveEdit} className="icon-btn save-btn" title="Save"><Check size={18} /></button>
@@ -97,6 +110,7 @@ export function JobTable({ jobs, onUpdateJob, onDeleteJob }: JobTableProps) {
                   <>
                     <td className="font-medium">{job.companyName}</td>
                     <td>{job.jobTitle}</td>
+                    <td>{job.jobType || '-'}</td>
                     <td>
                       <span className="status-badge" style={{ backgroundColor: statusColors[job.status] }}>
                         {job.status}
@@ -105,6 +119,15 @@ export function JobTable({ jobs, onUpdateJob, onDeleteJob }: JobTableProps) {
                     <td>{job.appliedDate}</td>
                     <td>{job.salaryRange}</td>
                     <td>{job.submittedDocuments}</td>
+                    <td>
+                      {job.jdUrl ? (
+                        <a href={job.jdUrl} target="_blank" rel="noopener noreferrer" className="icon-btn" title="View Job Description" style={{ display: 'inline-flex', color: '#6366f1' }}>
+                          <ExternalLink size={18} />
+                        </a>
+                      ) : (
+                        <span style={{ color: '#9ca3af' }}>-</span>
+                      )}
+                    </td>
                     <td>
                       <div className="action-buttons">
                         <button onClick={() => handleEditClick(job)} className="icon-btn edit-btn" title="Edit"><Edit2 size={18} /></button>
